@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Picnvert Web</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Picnvert Web版</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <button type="submit">変換実行</button>
+    </form>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    {% if result %}
+        <p>変換完了：<a href="{{ result }}">こちらからダウンロード</a></p>
+    {% endif %}
+    <hr>
+    <!-- 広告エリア（Google AdSenseなどをここに設置） -->
+    <div class="ad-placeholder">ここに広告が入ります</div>
+</body>
+</html>
