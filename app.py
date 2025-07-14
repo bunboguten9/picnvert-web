@@ -89,4 +89,5 @@ def img2img_download(session_id, filename):
     return send_file(files[filename], as_attachment=True)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
