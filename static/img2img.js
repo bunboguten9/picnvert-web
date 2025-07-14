@@ -1,71 +1,115 @@
 document.addEventListener("DOMContentLoaded", function () {
   const dropArea = document.getElementById("drop-area");
-  const fileElem = document.getElementById("fileElem");
-  const fileList = document.getElementById("file-list");
+  const fileInput = document.getElementById("file-input");
+  const formatSelect = document.getElementById("format-select");
+  const convertBtn = document.getElementById("convert-btn");
+  const downloadArea = document.getElementById("download-area");
 
-  dropArea.addEventListener("click", () => fileElem.click());
+  let selectedFiles = [];
+
+  dropArea.addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    selectedFiles = Array.from(e.target.files);
+    showFileList();
+  });
 
   dropArea.addEventListener("dragover", (e) => {
     e.preventDefault();
-    dropArea.style.borderColor = "#4CAF50";
+    dropArea.classList.add("hover");
   });
 
   dropArea.addEventListener("dragleave", () => {
-    dropArea.style.borderColor = "#ccc";
+    dropArea.classList.remove("hover");
   });
 
   dropArea.addEventListener("drop", (e) => {
     e.preventDefault();
-    handleFiles(e.dataTransfer.files);
-    dropArea.style.borderColor = "#ccc";
+    dropArea.classList.remove("hover");
+
+    const dt = e.dataTransfer;
+    const files = Array.from(dt.files);
+    selectedFiles = files;
+    showFileList();
   });
 
-  fileElem.addEventListener("change", () => {
-    handleFiles(fileElem.files);
-  });
-
-  function handleFiles(files) {
-    fileList.innerHTML = "";
-    [...files].forEach(file => {
-      const div = document.createElement("div");
-      div.textContent = file.webkitRelativePath || file.name;
-      fileList.appendChild(div);
+  function showFileList() {
+    const list = document.getElementById("file-list");
+    list.innerHTML = "";
+    selectedFiles.forEach(file => {
+      const li = document.createElement("li");
+      li.textContent = file.name;
+      list.appendChild(li);
     });
   }
-});
 
-document.getElementById("convertBtn").addEventListener("click", () => {
-  const format = document.getElementById("format").value;
-  const includeSubdirs = document.getElementById("includeSubdirs").checked;
+  convertBtn.addEventListener("click", () => {
+    if (selectedFiles.length === 0) {
+      alert("変換するファイルを選択してください。");
+      return;
+    }
 
-  const formData = new FormData();
-  formData.append("format", format);
-  formData.append("include_subdirs", includeSubdirs);
+    const format = formatSelect.value;
+    const formData = new FormData();
+    selectedFiles.forEach(file => {
+      formData.append("files", file);
+    });
+    formData.append("format", format);
 
-  const files = fileElem.files;
-  for (let i = 0; i < files.length; i++) {
-    formData.append("files", files[i]);
-  }
+    convertBtn.disabled = true;
+    convertBtn.textContent = "変換中...";
 
-  fetch("/img2img/convert", {
-    method: "POST",
-    body: formData
-  })
-    .then(res => {
-      if (!res.ok) throw new Error("変換失敗");
-      return res.blob();
+    fetch("/img2img/convert", {
+      method: "POST",
+      body: formData
     })
-    .then(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "converted_images.zip";
-      a.textContent = "✅ 変換済みファイルをダウンロード";
-      const area = document.getElementById("download-area");
-      area.innerHTML = "";
-      area.appendChild(a);
+    .then(async res => {
+      if (!res.ok) throw new Error("変換に失敗しました。");
+
+      const sessionId = res.headers.get("X-Session-ID");
+      const blob = await res.blob();
+      const zipUrl = URL.createObjectURL(blob);
+
+      // ダウンロードリンク表示
+      downloadArea.innerHTML = "";
+
+      const zipLink = document.createElement("a");
+      zipLink.href = zipUrl;
+      zipLink.download = "converted_images.zip";
+      zipLink.textContent = "✅ 一括ダウンロード（ZIP）";
+      zipLink.style.display = "block";
+      zipLink.style.marginTop = "10px";
+      downloadArea.appendChild(zipLink);
+
+      // 個別リンクも取得して表示
+      fetch(`/img2img/list/${sessionId}`)
+        .then(r => r.json())
+        .then(files => {
+          const ul = document.createElement("ul");
+          ul.style.marginTop = "10px";
+          files.forEach(f => {
+            const li = document.createElement("li");
+            const link = document.createElement("a");
+            link.href = `/img2img/download/${sessionId}/${encodeURIComponent(f)}`;
+            link.download = f;
+            link.textContent = `📄 ${f}`;
+            li.appendChild(link);
+            ul.appendChild(li);
+          });
+          downloadArea.appendChild(document.createElement("hr"));
+          downloadArea.appendChild(document.createTextNode("個別ダウンロード："));
+          downloadArea.appendChild(ul);
+        });
+
     })
     .catch(err => {
-      alert("変換に失敗しました：" + err.message);
+      alert("変換エラー：" + err.message);
+    })
+    .finally(() => {
+      convertBtn.disabled = false;
+      convertBtn.textContent = "変換実行";
     });
+  });
 });
