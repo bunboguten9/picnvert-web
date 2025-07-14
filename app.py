@@ -5,6 +5,22 @@ import zipfile
 import os
 import tempfile
 import uuid
+import time
+
+EXPIRE_SECONDS = 600  # 10分
+
+def cleanup_old_sessions():
+    now = time.time()
+    for sid, filemap in list(INDIVIDUAL_IMAGES.items()):
+        for fpath in filemap.values():
+            try:
+                if os.path.exists(fpath) and now - os.path.getmtime(fpath) > EXPIRE_SECONDS:
+                    os.remove(fpath)
+            except Exception:
+                pass
+        INDIVIDUAL_IMAGES.pop(sid, None)
+
+cleanup_old_sessions()
 
 app = Flask(__name__)
 
