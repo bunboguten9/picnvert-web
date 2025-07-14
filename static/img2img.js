@@ -25,15 +25,23 @@ document.addEventListener("DOMContentLoaded", function () {
     dropArea.classList.remove("hover");
   });
 
-  dropArea.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dropArea.classList.remove("hover");
+dropArea.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  dropArea.classList.remove("hover");
 
-    const dt = e.dataTransfer;
-    const files = Array.from(dt.files);
-    selectedFiles = files;
-    showFileList();
-  });
+  const includeSubdirs = document.getElementById("includeSubdirs").checked;
+  let newFiles = [];
+
+  if (includeSubdirs) {
+    newFiles = await getAllFilesFromDataTransferItemList(e.dataTransfer.items);
+  } else {
+    newFiles = Array.from(e.dataTransfer.files);
+  }
+
+  files.push(...newFiles);
+  updateFileList();
+});
+
 
   function showFileList() {
     const list = document.getElementById("file-list");
@@ -113,3 +121,43 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+
+async function getAllFilesFromDataTransferItemList(dataTransferItemList) {
+  const files = [];
+
+  for (const item of dataTransferItemList) {
+    const entry = item.webkitGetAsEntry?.();
+    if (entry) {
+      const newFiles = await traverseEntry(entry);
+      files.push(...newFiles);
+    }
+  }
+
+  return files;
+}
+
+function traverseEntry(entry) {
+  return new Promise((resolve) => {
+    if (entry.isFile) {
+      entry.file((file) => resolve([file]));
+    } else if (entry.isDirectory) {
+      const dirReader = entry.createReader();
+      let entries = [];
+
+      const readEntries = () => {
+        dirReader.readEntries(async (batch) => {
+          if (batch.length === 0) {
+            const all = await Promise.all(entries.map(traverseEntry));
+            resolve(all.flat());
+          } else {
+            entries.push(...batch);
+            readEntries();
+          }
+        });
+      };
+      readEntries();
+    } else {
+      resolve([]);
+    }
+  });
+}
