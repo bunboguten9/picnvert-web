@@ -4,8 +4,12 @@ import io
 import zipfile
 import os
 import tempfile
+import uuid
 
 app = Flask(__name__)
+
+TEMP_DIR = tempfile.mkdtemp()
+INDIVIDUAL_IMAGES = {}  # session_id -> {filename: full_path}
 
 @app.route("/")
 def index():
