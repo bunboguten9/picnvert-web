@@ -3,10 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <title>画像 → 画像変換</title>
+  <script src="{{ url_for('static', filename='img2img.js') }}"></script>
+  <style>
+    #drop-area {
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      margin: 20px 0;
+    }
+    #file-list {
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
   <h1>画像 → 画像（形式変換）</h1>
-  <p>ここにドラッグ＆ドロップ領域と変換設定を追加していきます。</p>
+
+  <!-- ✅ D&Dとクリックでファイル・フォルダ選択 -->
+  <div id="drop-area">
+    <p>ここにファイルやフォルダをドロップ、またはクリックして選択</p>
+    <input type="file" id="fileElem" multiple webkitdirectory style="display:none">
+  </div>
+
+  <!-- ✅ サブフォルダを含める -->
+  <label>
+    <input type="checkbox" id="includeSubdirs" checked>
+    サブフォルダも含める
+  </label>
+
+  <!-- ✅ ファイルリスト -->
+  <div id="file-list"></div>
+
   <a href="/">← モード選択に戻る</a>
 </body>
 </html>
