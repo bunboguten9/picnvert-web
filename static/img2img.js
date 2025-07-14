@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   const dropArea = document.getElementById("drop-area");
-  const fileInput = document.getElementById("file-input");
-  const formatSelect = document.getElementById("format-select");
+  const fileInput = document.getElementById("fileElem");
+  const formatSelect = document.getElementById("format");
   const convertBtn = document.getElementById("convert-btn");
   const downloadArea = document.getElementById("download-area");
 
@@ -38,8 +38,8 @@ dropArea.addEventListener("drop", async (e) => {
     newFiles = Array.from(e.dataTransfer.files);
   }
 
-  files.push(...newFiles);
-  updateFileList();
+  selectedFiles.push(...newFiles);
+  showFileList();
 });
 
 
