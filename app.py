@@ -7,6 +7,9 @@ import tempfile
 import uuid
 import time
 
+TEMP_DIR = tempfile.mkdtemp()
+INDIVIDUAL_IMAGES = {}  # session_id -> {filename: full_path}
+
 EXPIRE_SECONDS = 600  # 10分
 
 def cleanup_old_sessions():
@@ -23,9 +26,6 @@ def cleanup_old_sessions():
 cleanup_old_sessions()
 
 app = Flask(__name__)
-
-TEMP_DIR = tempfile.mkdtemp()
-INDIVIDUAL_IMAGES = {}  # session_id -> {filename: full_path}
 
 @app.route("/")
 def index():
