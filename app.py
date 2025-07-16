@@ -42,37 +42,50 @@ def img2img_convert():
     session_id = str(uuid.uuid4())
     INDIVIDUAL_IMAGES[session_id] = {}
 
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w") as zipf:
-        for file in files:
-            filename = file.filename
-            try:
-                img = Image.open(file.stream).convert("RGB")
-                name_without_ext = os.path.splitext(os.path.basename(filename))[0]
-                new_filename = f"{name_without_ext}.{output_format}"
+    # 複数 or 単一の判断用
+    converted_files = []
 
-                # Zip保存
-                img_io = io.BytesIO()
-                img.save(img_io, format=output_format.upper())
-                img_io.seek(0)
-                zipf.writestr(new_filename, img_io.read())
+    for file in files:
+        filename = file.filename
+        try:
+            img = Image.open(file.stream).convert("RGB")
+            name_without_ext = os.path.splitext(os.path.basename(filename))[0]
+            new_filename = f"{name_without_ext}.{output_format}"
+            output_path = os.path.join(TEMP_DIR, f"{session_id}_{new_filename}")
+            img.save(output_path, format=output_format.upper())
+            INDIVIDUAL_IMAGES[session_id][new_filename] = output_path
+            converted_files.append((new_filename, output_path))
+        except Exception as e:
+            print(f"変換失敗: {filename} - {e}")
 
-                # 個別保存
-                output_path = os.path.join(TEMP_DIR, f"{session_id}_{new_filename}")
-                img.save(output_path, format=output_format.upper())
-                INDIVIDUAL_IMAGES[session_id][new_filename] = output_path
+    if not converted_files:
+        return abort(400, "ファイル変換に失敗しました")
 
-            except Exception as e:
-                print(f"変換失敗: {filename} - {e}")
+    if len(converted_files) == 1:
+        # 単一ファイルを直接返す
+        fname, fpath = converted_files[0]
+        return send_file(
+            fpath,
+            as_attachment=True,
+            download_name=fname,
+            headers={"X-Session-ID": session_id}
+        )
+    else:
+        # ZIPでまとめる
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zipf:
+            for fname, fpath in converted_files:
+                with open(fpath, "rb") as f:
+                    zipf.writestr(fname, f.read())
 
-    zip_buffer.seek(0)
-    return send_file(
-        zip_buffer,
-        mimetype="application/zip",
-        as_attachment=True,
-        download_name="converted_images.zip",
-        headers={"X-Session-ID": session_id}
-    )
+        zip_buffer.seek(0)
+        return send_file(
+            zip_buffer,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="converted_images.zip",
+            headers={"X-Session-ID": session_id}
+        )
 
 @app.route("/img2img/list/<session_id>")
 def img2img_list(session_id):
