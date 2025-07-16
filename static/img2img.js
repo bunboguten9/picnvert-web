@@ -75,43 +75,56 @@ dropArea.addEventListener("drop", async (e) => {
     })
     .then(async res => {
       if (!res.ok) throw new Error("変換に失敗しました。");
-
+    
       const sessionId = res.headers.get("X-Session-ID");
       const blob = await res.blob();
-      const zipUrl = URL.createObjectURL(blob);
-
-      // ダウンロードリンク表示
+      const contentType = res.headers.get("Content-Type");
+      const url = URL.createObjectURL(blob);
+    
       downloadArea.innerHTML = "";
-
-      const zipLink = document.createElement("a");
-      zipLink.href = zipUrl;
-      zipLink.download = "converted_images.zip";
-      zipLink.textContent = "✅ 一括ダウンロード（ZIP）";
-      zipLink.style.display = "block";
-      zipLink.style.marginTop = "10px";
-      downloadArea.appendChild(zipLink);
-
-      // 個別リンクも取得して表示
-      fetch(`/img2img/list/${sessionId}`)
-        .then(r => r.json())
-        .then(files => {
-          const ul = document.createElement("ul");
-          ul.style.marginTop = "10px";
-          files.forEach(f => {
-            const li = document.createElement("li");
-            const link = document.createElement("a");
-            link.href = `/img2img/download/${sessionId}/${encodeURIComponent(f)}`;
-            link.download = f;
-            link.textContent = `📄 ${f}`;
-            li.appendChild(link);
-            ul.appendChild(li);
+    
+      if (contentType === "application/zip") {
+        // ZIPの場合
+        const zipLink = document.createElement("a");
+        zipLink.href = url;
+        zipLink.download = "converted_images.zip";
+        zipLink.textContent = "✅ 一括ダウンロード（ZIP）";
+        zipLink.style.display = "block";
+        zipLink.style.marginTop = "10px";
+        downloadArea.appendChild(zipLink);
+    
+        // 個別リンクも取得して表示
+        fetch(`/img2img/list/${sessionId}`)
+          .then(r => r.json())
+          .then(files => {
+            const ul = document.createElement("ul");
+            ul.style.marginTop = "10px";
+            files.forEach(f => {
+              const li = document.createElement("li");
+              const link = document.createElement("a");
+              link.href = `/img2img/download/${sessionId}/${encodeURIComponent(f)}`;
+              link.download = f;
+              link.textContent = `📄 ${f}`;
+              li.appendChild(link);
+              ul.appendChild(li);
+            });
+            downloadArea.appendChild(document.createElement("hr"));
+            downloadArea.appendChild(document.createTextNode("個別ダウンロード："));
+            downloadArea.appendChild(ul);
           });
-          downloadArea.appendChild(document.createElement("hr"));
-          downloadArea.appendChild(document.createTextNode("個別ダウンロード："));
-          downloadArea.appendChild(ul);
-        });
-
+    
+      } else {
+        // 単一画像ファイルの場合
+        const imgLink = document.createElement("a");
+        imgLink.href = url;
+        imgLink.download = "converted_image";
+        imgLink.textContent = "✅ 画像をダウンロード";
+        imgLink.style.display = "block";
+        imgLink.style.marginTop = "10px";
+        downloadArea.appendChild(imgLink);
+      }
     })
+
     .catch(err => {
       alert("変換エラー：" + err.message);
     })
