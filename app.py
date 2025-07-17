@@ -8,6 +8,8 @@ import os
 import tempfile
 import uuid
 import time
+import tempfile
+import traceback
 import pillow_heif
 pillow_heif.register_heif_opener()
 
@@ -44,62 +46,71 @@ def index():
 def img2img():
     return render_template("img2img.html")
 
+# 🔸 HEIC/HEIF対応を有効にする
+register_heif_opener()
+
 @app.route("/img2img/convert", methods=["POST"])
 def img2img_convert():
     files = request.files.getlist("files")
     output_format = request.form.get("format", "png").lower()
-    session_id = str(uuid.uuid4())
-    INDIVIDUAL_IMAGES[session_id] = {}
+    
+    session_id = next(tempfile._get_candidate_names())
+    session_dir = os.path.join("temp", session_id)
+    os.makedirs(session_dir, exist_ok=True)
+    
+    output_paths = []
 
-    converted_files = []
-
-    for file in files:
-        filename = file.filename
+    for i, file in enumerate(files):
         try:
-            img = Image.open(file.stream).convert("RGB")
-            name_without_ext = os.path.splitext(os.path.basename(filename))[0]
-            new_filename = f"{name_without_ext}.{output_format}"
-            output_path = os.path.join(TEMP_DIR, f"{session_id}_{new_filename}")
-            # Pillowでは "HEIC" の format 文字列は "HEIF" になることがあるため注意
-            if output_format == "heic":
-                img.save(output_path, format="HEIF")
-            else:
-                img.save(output_path, format=output_format.upper())
-            INDIVIDUAL_IMAGES[session_id][new_filename] = output_path
-            converted_files.append((new_filename, output_path))
+            print(f"[INFO] ファイル {i+1}: {file.filename}")
+
+            # 画像を開く
+            image = Image.open(file.stream)
+            print(f"[INFO] 読み込み成功: {file.filename} - {image.format} - サイズ: {image.size}")
+
+            # 必要に応じて RGB に変換（HEICなども含む）
+            if image.mode not in ("RGB", "RGBA"):
+                image = image.convert("RGB")
+
+            # 幅が大きすぎる画像はリサイズ（例：1280px以下に制限）
+            max_width = 1280
+            if image.width > max_width:
+                ratio = max_width / image.width
+                new_size = (int(image.width * ratio), int(image.height * ratio))
+                image = image.resize(new_size)
+                print(f"[INFO] 縮小: {file.filename} → {new_size}")
+
+            # 保存先パス作成
+            base_name = os.path.splitext(file.filename)[0]
+            output_filename = f"{base_name}_converted.{output_format}"
+            output_path = os.path.join(session_dir, output_filename)
+
+            # 保存（出力形式に応じて）
+            image.save(output_path, format=output_format.upper())
+            output_paths.append(output_path)
+
         except Exception as e:
-            print(f"変換失敗: {filename} - {e}")
+            print(f"[ERROR] {file.filename} の変換に失敗: {e}")
+            traceback.print_exc()
 
-    if not converted_files:
-        return abort(400, "ファイル変換に失敗しました")
-
-    if len(converted_files) == 1:
-        # 単一ファイルを直接返す
-        fname, fpath = converted_files[0]
-        response = make_response(send_file(
-            fpath,
-            as_attachment=True,
-            download_name=fname
-        ))
+    # 単体画像ならそのまま返す
+    if len(output_paths) == 1:
+        response = make_response(send_file(output_paths[0], as_attachment=True))
         response.headers["X-Session-ID"] = session_id
         return response
-    else:
-        # ZIPでまとめる
-        zip_buffer = io.BytesIO()
-        for fname, fpath in converted_files:
-            with zipfile.ZipFile(zip_buffer, "a") as zipf:
-                with open(fpath, "rb") as f:
-                    zipf.writestr(fname, f.read())
 
-        zip_buffer.seek(0)
-        response = make_response(send_file(
-            zip_buffer,
-            mimetype="application/zip",
-            as_attachment=True,
-            download_name="converted_images.zip"
-        ))
+    # 複数画像なら ZIP にして返す
+    elif len(output_paths) > 1:
+        zip_path = os.path.join(session_dir, "converted_images.zip")
+        with zipfile.ZipFile(zip_path, "w") as zipf:
+            for path in output_paths:
+                zipf.write(path, os.path.basename(path))
+        response = make_response(send_file(zip_path, as_attachment=True))
         response.headers["X-Session-ID"] = session_id
         return response
+
+    # 変換に失敗した場合
+    return jsonify({"error": "変換に失敗しました"}), 500
 
 @app.route("/img2img/list/<session_id>")
 def img2img_list(session_id):
