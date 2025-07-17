@@ -8,6 +8,9 @@ import os
 import tempfile
 import uuid
 import time
+import pillow_heif
+pillow_heif.register_heif_opener()
+
 
 TEMP_DIR = tempfile.mkdtemp()
 INDIVIDUAL_IMAGES = {}  # session_id -> {filename: full_path}
