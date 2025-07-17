@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   const dropArea = document.getElementById("drop-area");
   const fileInput = document.getElementById("fileElem");
-  const formatSelect = document.getElementById("format");
+  const formatSelect = document.getElementById("format-select");
   const convertBtn = document.getElementById("convert-btn");
   const downloadArea = document.getElementById("download-area");
 
