@@ -60,7 +60,11 @@ def img2img_convert():
             name_without_ext = os.path.splitext(os.path.basename(filename))[0]
             new_filename = f"{name_without_ext}.{output_format}"
             output_path = os.path.join(TEMP_DIR, f"{session_id}_{new_filename}")
-            img.save(output_path, format=output_format.upper())
+            # Pillowでは "HEIC" の format 文字列は "HEIF" になることがあるため注意
+            if output_format == "heic":
+                img.save(output_path, format="HEIF")
+            else:
+                img.save(output_path, format=output_format.upper())
             INDIVIDUAL_IMAGES[session_id][new_filename] = output_path
             converted_files.append((new_filename, output_path))
         except Exception as e:
