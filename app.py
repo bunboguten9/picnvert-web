@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file, render_template, abort, jsonify
+from flask import Flask, request, send_file, render_template, abort, jsonify, make_response
 from PIL import Image
 import io
 import zipfile
@@ -42,7 +42,6 @@ def img2img_convert():
     session_id = str(uuid.uuid4())
     INDIVIDUAL_IMAGES[session_id] = {}
 
-    # 複数 or 単一の判断用
     converted_files = []
 
     for file in files:
@@ -64,8 +63,6 @@ def img2img_convert():
     if len(converted_files) == 1:
         # 単一ファイルを直接返す
         fname, fpath = converted_files[0]
-        from flask import make_response
-        
         response = make_response(send_file(
             fpath,
             as_attachment=True,
@@ -76,18 +73,17 @@ def img2img_convert():
     else:
         # ZIPでまとめる
         zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w") as zipf:
-            for fname, fpath in converted_files:
+        for fname, fpath in converted_files:
+            with zipfile.ZipFile(zip_buffer, "a") as zipf:
                 with open(fpath, "rb") as f:
                     zipf.writestr(fname, f.read())
 
         zip_buffer.seek(0)
-        from flask import make_response
-        
         response = make_response(send_file(
-            fpath,
+            zip_buffer,
+            mimetype="application/zip",
             as_attachment=True,
-            download_name=fname
+            download_name="converted_images.zip"
         ))
         response.headers["X-Session-ID"] = session_id
         return response
@@ -108,4 +104,3 @@ def img2img_download(session_id, filename):
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
