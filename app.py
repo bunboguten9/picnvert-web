@@ -102,5 +102,36 @@ def img2img_download(session_id, filename):
         return abort(404)
     return send_file(files[filename], as_attachment=True)
 
+@app.route("/img2pdf")
+def img2pdf():
+    return render_template("img2pdf.html")
+
+@app.route("/img2pdf/convert", methods=["POST"])
+def img2pdf_convert():
+    files = request.files.getlist("files")
+    images = []
+
+    for file in files:
+        try:
+            img = Image.open(file.stream).convert("RGB")
+            images.append(img)
+        except Exception as e:
+            print(f"[ERROR] PDF変換失敗: {file.filename} - {e}")
+
+    if not images:
+        return abort(400, "変換できる画像がありません")
+
+    pdf_buffer = io.BytesIO()
+    images[0].save(pdf_buffer, format="PDF", save_all=True, append_images=images[1:])
+    pdf_buffer.seek(0)
+
+    response = make_response(send_file(
+        pdf_buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="converted.pdf"
+    ))
+    return response
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
