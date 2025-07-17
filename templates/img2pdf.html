@@ -2,17 +2,40 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>画像 → PDF変換</title>
-  <script src="{{ url_for('static', filename='img2pdf.js') }}"></script>
+  <title>画像 → PDF変換 | Picnvert</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ✅ Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>画像 → PDF変換</h1>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
 
-  <input type="file" id="fileElem" multiple accept="image/*">
-  <button id="convert-btn">PDFに変換</button>
+  <div class="w-full max-w-2xl bg-white p-8 rounded-2xl shadow-xl">
+    <h1 class="text-2xl font-bold text-center text-red-600 mb-4">📄 画像 → PDF</h1>
+    <p class="text-center text-gray-600 mb-6">
+      画像ファイル（複数可）をアップロードし、PDFにまとめます。
+    </p>
 
-  <div id="download-area" style="margin-top: 20px;"></div>
+    <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-red-400 transition mb-4">
+      <p>画像をドロップ・クリックして選択</p>
+      <input type="file" id="fileElem" accept="image/*" multiple style="display: none;">
+    </div>
 
-  <a href="/">← モード選択に戻る</a>
+    <div id="file-list" class="text-sm text-gray-700 mb-4"></div>
+
+    <div class="flex justify-center">
+      <button id="convert-btn" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2 rounded shadow-md transition">
+        PDFを作成
+      </button>
+    </div>
+
+    <div id="download-area" class="mt-6 text-center"></div>
+
+    <div class="mt-8 text-center">
+      <a href="/" class="text-blue-500 hover:underline">← モード選択に戻る</a>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='img2pdf.js') }}"></script>
 </body>
 </html>
