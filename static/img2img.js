@@ -46,11 +46,45 @@ dropArea.addEventListener("drop", async (e) => {
   function showFileList() {
     const list = document.getElementById("file-list");
     list.innerHTML = "";
+  
+    // スクロールコンテナの作成
+    const scrollContainer = document.createElement("div");
+    scrollContainer.style.display = "flex";
+    scrollContainer.style.overflowX = "auto";
+    scrollContainer.style.gap = "16px";
+    scrollContainer.style.padding = "10px 0";
+  
     selectedFiles.forEach(file => {
-      const li = document.createElement("li");
-      li.textContent = file.name;
-      list.appendChild(li);
+      const container = document.createElement("div");
+      container.style.minWidth = "100px";
+      container.style.textAlign = "center";
+  
+      const label = document.createElement("div");
+      label.textContent = file.name;
+      label.style.fontSize = "0.8rem";
+      label.style.marginBottom = "4px";
+  
+      const img = document.createElement("img");
+      img.style.width = "100px";
+      img.style.height = "100px";
+      img.style.objectFit = "cover";
+      img.style.border = "1px solid #ccc";
+      img.style.borderRadius = "8px";
+      img.alt = file.name;
+  
+      // FileReaderで画像を読み込み
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+  
+      container.appendChild(label);
+      container.appendChild(img);
+      scrollContainer.appendChild(container);
     });
+  
+    list.appendChild(scrollContainer);
   }
 
   convertBtn.addEventListener("click", () => {
