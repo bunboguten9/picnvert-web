@@ -64,12 +64,15 @@ def img2img_convert():
     if len(converted_files) == 1:
         # 単一ファイルを直接返す
         fname, fpath = converted_files[0]
-        return send_file(
+        from flask import make_response
+        
+        response = make_response(send_file(
             fpath,
             as_attachment=True,
-            download_name=fname,
-            headers={"X-Session-ID": session_id}
-        )
+            download_name=fname
+        ))
+        response.headers["X-Session-ID"] = session_id
+        return response
     else:
         # ZIPでまとめる
         zip_buffer = io.BytesIO()
@@ -79,13 +82,15 @@ def img2img_convert():
                     zipf.writestr(fname, f.read())
 
         zip_buffer.seek(0)
-        return send_file(
-            zip_buffer,
-            mimetype="application/zip",
+        from flask import make_response
+        
+        response = make_response(send_file(
+            fpath,
             as_attachment=True,
-            download_name="converted_images.zip",
-            headers={"X-Session-ID": session_id}
-        )
+            download_name=fname
+        ))
+        response.headers["X-Session-ID"] = session_id
+        return response
 
 @app.route("/img2img/list/<session_id>")
 def img2img_list(session_id):
