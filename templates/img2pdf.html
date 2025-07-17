@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>画像 → PDF変換</title>
+  <script src="{{ url_for('static', filename='img2pdf.js') }}"></script>
+</head>
+<body>
+  <h1>画像 → PDF変換</h1>
+
+  <input type="file" id="fileElem" multiple accept="image/*">
+  <button id="convert-btn">PDFに変換</button>
+
+  <div id="download-area" style="margin-top: 20px;"></div>
+
+  <a href="/">← モード選択に戻る</a>
+</body>
+</html>
