@@ -102,10 +102,23 @@ dropArea.addEventListener("drop", async (e) => {
 
     convertBtn.disabled = true;
     convertBtn.textContent = "変換中...";
-    
+
     const progressContainer = document.getElementById("progress-container");
     const progressBar = document.getElementById("progress-bar");
     const progressMessage = document.getElementById("progress-message");
+    
+    progressContainer.style.display = "block";
+    progressBar.value = 10;
+    progressMessage.textContent = "モバイル環境では変換に時間がかかる場合があります…";
+    
+    // 擬似プログレス進行（任意）
+    let fakeProgress = 10;
+    const fakeInterval = setInterval(() => {
+      if (fakeProgress < 90) {
+        fakeProgress += Math.random() * 5;
+        progressBar.value = Math.min(fakeProgress, 90);
+      }
+    }, 300);
     
     progressContainer.style.display = "block";
     progressBar.value = 10;
@@ -173,6 +186,9 @@ dropArea.addEventListener("drop", async (e) => {
     .finally(() => {
       convertBtn.disabled = false;
       convertBtn.textContent = "変換実行";
+      progressContainer.style.display = "none";
+      progressBar.value = 0;
+      clearInterval(fakeInterval);
     });
   });
 });
