@@ -1,5 +1,7 @@
 from flask import Flask, request, send_file, render_template, abort, jsonify, make_response
 from PIL import Image
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
 import io
 import zipfile
 import os
@@ -113,29 +115,34 @@ def img2pdf():
 @app.route("/img2pdf/convert", methods=["POST"])
 def img2pdf_convert():
     files = request.files.getlist("files")
-    images = []
+    session_id = str(uuid.uuid4())
+    output_path = os.path.join(TEMP_DIR, f"{session_id}_merged.pdf")
 
-    for file in files:
-        try:
+    try:
+        c = canvas.Canvas(output_path, pagesize=A4)
+        width, height = A4
+
+        for file in files:
             img = Image.open(file.stream).convert("RGB")
-            images.append(img)
-        except Exception as e:
-            print(f"[ERROR] PDF変換失敗: {file.filename} - {e}")
+            img.thumbnail((width, height))
+            tmp_path = os.path.join(TEMP_DIR, f"{uuid.uuid4()}.jpg")
+            img.save(tmp_path, "JPEG")
+            c.drawImage(tmp_path, 0, 0, width=width, height=height)
+            c.showPage()
+            os.remove(tmp_path)
 
-    if not images:
-        return abort(400, "変換できる画像がありません")
+        c.save()
 
-    pdf_buffer = io.BytesIO()
-    images[0].save(pdf_buffer, format="PDF", save_all=True, append_images=images[1:])
-    pdf_buffer.seek(0)
+        response = make_response(send_file(
+            output_path,
+            as_attachment=True,
+            download_name="converted.pdf"
+        ))
+        return response
 
-    response = make_response(send_file(
-        pdf_buffer,
-        mimetype="application/pdf",
-        as_attachment=True,
-        download_name="converted.pdf"
-    ))
-    return response
+    except Exception as e:
+        print(f"PDF変換エラー: {e}")
+        return abort(500, "PDF作成に失敗しました。")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
