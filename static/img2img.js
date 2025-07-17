@@ -102,6 +102,14 @@ dropArea.addEventListener("drop", async (e) => {
 
     convertBtn.disabled = true;
     convertBtn.textContent = "変換中...";
+    
+    const progressContainer = document.getElementById("progress-container");
+    const progressBar = document.getElementById("progress-bar");
+    const progressMessage = document.getElementById("progress-message");
+    
+    progressContainer.style.display = "block";
+    progressBar.value = 10;
+    progressMessage.textContent = "モバイル環境では変換に時間がかかる場合があります…";
 
     fetch("/img2img/convert", {
       method: "POST",
