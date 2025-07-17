@@ -27,6 +27,10 @@ cleanup_old_sessions()
 
 app = Flask(__name__)
 
+@app.route("/googlef081ea3d57b18b33.html")
+def google_verification():
+    return "google-site-verification: googlef081ea3d57b18b33.html"
+
 @app.route("/")
 def index():
     return render_template("index.html")
