@@ -2,40 +2,51 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Picnvert - 画像・PDF変換ツール </title>
-  <meta name="description" content="Picnvertは、画像の形式変換やPDF作成などが簡単にできる無料のオンライン変換ツールです。JPEG/PNG/WebP変換や画像をPDFに変換する機能を備えています。">
+  <title>Picnvert - 画像・PDF変換ツール（無料）</title>
+  <meta name="description" content="Picnvertは、画像やPDFをブラウザ上で簡単に変換できる無料ツールです。形式変換、PDF化など複数モードに対応しています。">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="index, follow">
+
+  <!-- ✅ Google Search Console 検証用 -->
   <meta name="google-site-verification" content="WQ_5vj1gnaDqtYFNyMqBo7b0TtSHZS9ajQzUW_sqANg" />
+
+  <!-- ✅ Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>Picnvert（ピコンバート）</h1>
-  <p>Picnvertは、ブラウザ上で簡単に画像やPDFの変換ができる無料のWebツールです。</p>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center justify-center p-6">
 
-  <h2>現在対応している変換モード</h2>
-  <ul>
-    <li><a href="/img2img">画像 → 画像（形式変換）</a><br>
-        JPEG・PNG・WEBP・TIFFなどの形式に一括変換できます。</li>
-    <li><a href="/img2pdf">画像 → PDF変換</a><br>
-        複数の画像を1つのPDFにまとめて保存できます。</li>
-  </ul>
+  <div class="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8">
+    <h1 class="text-3xl font-bold text-center text-blue-700 mb-4">Picnvert</h1>
+    <p class="text-center text-gray-600 mb-8">
+      ブラウザで使える無料の画像・PDF変換ツールです。形式変換・PDF化など、さまざまな変換を簡単操作で。
+    </p>
 
-  <!-- 今後追加予定のモード
-  <h3>今後追加予定</h3>
-  <ul>
-    <li><a href="/imgpdf">画像 ↔ PDF</a></li>
-    <li><a href="/pdfmerge">PDFページ結合</a></li>
-  </ul>
-  -->
+    <h2 class="text-xl font-semibold text-gray-700 mb-4 text-center">モードを選択してください</h2>
 
-  <h2>特徴</h2>
-  <ul>
-    <li>インストール不要・完全無料</li>
-    <li>ドラッグ＆ドロップ対応の直感的な操作</li>
-    <li>複数ファイル一括変換・ZIPダウンロード対応</li>
-    <li>スマホ・PCの両方に対応</li>
-  </ul>
+    <ul class="space-y-4">
+      <li>
+        <a href="/img2img" class="block bg-blue-100 hover:bg-blue-200 transition p-4 rounded-lg shadow-md text-blue-800 font-medium text-center">
+          📁 画像 → 画像（形式変換）
+        </a>
+      </li>
+      <li>
+        <a href="/img2pdf" class="block bg-green-100 hover:bg-green-200 transition p-4 rounded-lg shadow-md text-green-800 font-medium text-center">
+          📄 画像 → PDF（複数画像対応）
+        </a>
+      </li>
+      <!-- 今後追加予定のモード -->
+      <!--
+      <li>
+        <a href="/pdfmerge" class="block bg-yellow-100 hover:bg-yellow-200 transition p-4 rounded-lg shadow-md text-yellow-800 font-medium text-center">
+          📚 PDFページ結合（Coming Soon）
+        </a>
+      </li>
+      -->
+    </ul>
 
-  <p>今後も機能を追加していく予定です。</p>
+    <footer class="text-center text-sm text-gray-400 mt-10">
+      © 2025 Picnvert
+    </footer>
+  </div>
+
 </body>
 </html>
