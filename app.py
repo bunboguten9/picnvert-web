@@ -179,39 +179,37 @@ def imgpdf_convert():
     output_path = os.path.join(TEMP_DIR, f"{session_id}_merged.pdf")
 
     try:
-        c = canvas.Canvas(output_path, pagesize=A4)
-        page_width, page_height = A4
-        max_size = 2048  # 長辺の上限
+        pdf_buffer = io.BytesIO()
+        c = canvas.Canvas(pdf_buffer)
+
+        max_size = 2048  # 長辺最大2048pxにリサイズ（縦横比維持）
 
         for file in files:
             img = Image.open(file.stream).convert("RGB")
-            
-            # 長辺2048pxにリサイズ（縦横比保持）
+
+            # リサイズ（長辺2048pxまで）
             width, height = img.size
             if max(width, height) > max_size:
                 scale = max_size / max(width, height)
-                new_size = (int(width * scale), int(height * scale))
-                img = img.resize(new_size, Image.LANCZOS)
+                width = int(width * scale)
+                height = int(height * scale)
+                img = img.resize((width, height), Image.LANCZOS)
 
             img_io = io.BytesIO()
             img.save(img_io, format="JPEG")
             img_io.seek(0)
 
-            # 画像を中央配置で描画
-            img_width, img_height = img.size
-            aspect_ratio = img_width / img_height
-
-            # PDFページ内で画像を最大限表示（A4ページサイズ内で縦横比維持）
-            scale = min(page_width / img_width, page_height / img_height)
-            draw_width = img_width * scale
-            draw_height = img_height * scale
-            x = (page_width - draw_width) / 2
-            y = (page_height - draw_height) / 2
-
-            c.drawImage(ImageReader(img_io), x, y, width=draw_width, height=draw_height)
+            # ページサイズを画像サイズに合わせて変更
+            c.setPageSize((width, height))
+            c.drawImage(ImageReader(img_io), 0, 0, width=width, height=height)
             c.showPage()
 
         c.save()
+
+        # PDF書き出し
+        pdf_buffer.seek(0)
+        with open(output_path, "wb") as f:
+            f.write(pdf_buffer.read())
 
         response = make_response(send_file(
             output_path,
@@ -223,7 +221,6 @@ def imgpdf_convert():
     except Exception as e:
         print(f"PDF変換エラー: {e}")
         return abort(500, "PDF作成に失敗しました。")
-
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
