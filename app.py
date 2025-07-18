@@ -2,7 +2,9 @@ from flask import Flask, request, send_file, render_template, abort, jsonify, ma
 from PIL import Image, UnidentifiedImageError
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
 import io
+import fitz
 import zipfile
 import os
 import tempfile
@@ -133,6 +135,39 @@ def img2img_download(session_id, filename):
         return abort(404)
     return send_file(files[filename], as_attachment=True)
 
+@app.route("/pdf2img/convert", methods=["POST"])
+def pdf_to_images():
+    if "pdf" not in request.files:
+        return "No PDF file uploaded", 400
+
+    pdf_file = request.files["pdf"]
+    if pdf_file.filename == "":
+        return "Empty filename", 400
+
+    try:
+        # PDF を読み込む
+        pdf_data = pdf_file.read()
+        doc = fitz.open(stream=pdf_data, filetype="pdf")
+
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zipf:
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                pix = page.get_pixmap(dpi=150)
+                img_data = pix.tobytes("png")
+                zipf.writestr(f"page_{page_num + 1}.png", img_data)
+
+        zip_buffer.seek(0)
+        return send_file(
+            zip_buffer,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="extracted_images.zip"
+        )
+
+    except Exception as e:
+        return f"Error processing PDF: {str(e)}", 500
+
 @app.route("/img2pdf")
 def img2pdf():
     return render_template("img2pdf.html")
@@ -150,11 +185,11 @@ def img2pdf_convert():
         for file in files:
             img = Image.open(file.stream).convert("RGB")
             img.thumbnail((width, height))
-            tmp_path = os.path.join(TEMP_DIR, f"{uuid.uuid4()}.jpg")
-            img.save(tmp_path, "JPEG")
-            c.drawImage(tmp_path, 0, 0, width=width, height=height)
+            img_io = io.BytesIO()
+            img.save(img_io, format="JPEG")
+            img_io.seek(0)
+            c.drawImage(ImageReader(img_io), 0, 0, width=width, height=height)
             c.showPage()
-            os.remove(tmp_path)
 
         c.save()
 
