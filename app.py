@@ -222,5 +222,22 @@ def imgpdf_convert():
         print(f"PDF変換エラー: {e}")
         return abort(500, "PDF作成に失敗しました。")
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/img2img')
+def img2img():
+    return render_template('img2img.html')
+
+@app.route('/imgpdf')
+def imgpdf():
+    return render_template('imgpdf.html')
+
+# ✅ PDFエディタ用ルートの追加
+@app.route('/pdfeditor')
+def pdfeditor():
+    return render_template('pdfeditor.html')
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
