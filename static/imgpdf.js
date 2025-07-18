@@ -1,3 +1,6 @@
+// static/imgpdf.js
+
+// 初期化処理
 document.addEventListener("DOMContentLoaded", () => {
   const directionBtn = document.getElementById("direction-toggle");
   const modeTextBtn = document.getElementById("mode-text-toggle");
@@ -5,18 +8,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const formContainer = document.getElementById("form-container");
   const downloadArea = document.getElementById("download-area");
 
-  let mode = "imgpdf"; // 初期モード：画像 → PDF
+  let mode = "img2pdf"; // デフォルトは画像 → PDF
 
-  // -------------------------
-  // モード切り替え・UI再描画
-  // -------------------------
   function renderForm() {
     downloadArea.innerHTML = "";
-    if (mode === "imgpdf") {
-      modeTitle.textContent = "📄 画像 → PDF";
+    if (mode === "img2pdf") {
+      modeTitle.innerHTML = "🖼 → 📄";
       modeTextBtn.textContent = "PDF → 画像に切り替え";
       directionBtn.textContent = "→";
-
       formContainer.innerHTML = `
         <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-red-400 transition mb-4">
           <p>画像をドロップ・クリックして選択</p>
@@ -29,13 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
         </div>
       `;
-
-      setupimgpdfLogic();
+      setupImg2PdfLogic();
     } else {
-      modeTitle.textContent = "🖼 PDF → 画像";
+      modeTitle.innerHTML = "📄 → 🖼";
       modeTextBtn.textContent = "画像 → PDFに切り替え";
       directionBtn.textContent = "←";
-
       formContainer.innerHTML = `
         <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition mb-4">
           <p>PDFをドロップ・クリックして選択</p>
@@ -48,50 +45,42 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
         </div>
       `;
-
       setupPdf2ImgLogic();
     }
   }
 
-  // -------------------------
-  // モード切り替えイベント
-  // -------------------------
   directionBtn.addEventListener("click", () => {
-    mode = mode === "imgpdf" ? "pdf2img" : "imgpdf";
+    mode = mode === "img2pdf" ? "pdf2img" : "img2pdf";
     renderForm();
   });
 
   modeTextBtn.addEventListener("click", () => {
-    mode = mode === "imgpdf" ? "pdf2img" : "imgpdf";
+    mode = mode === "img2pdf" ? "pdf2img" : "img2pdf";
     renderForm();
   });
 
-  // -------------------------
-  // 画像 → PDF ロジック
-  // -------------------------
-  function setupimgpdfLogic() {
+  renderForm();
+
+  function setupImg2PdfLogic() {
     const dropArea = document.getElementById("drop-area");
     const fileInput = document.getElementById("fileElem");
     const convertBtn = document.getElementById("convert-btn");
     const fileList = document.getElementById("file-list");
+
     let selectedFiles = [];
 
     dropArea.addEventListener("click", () => fileInput.click());
-
     fileInput.addEventListener("change", (e) => {
       selectedFiles = Array.from(e.target.files);
       showFileList();
     });
-
     dropArea.addEventListener("dragover", (e) => {
       e.preventDefault();
       dropArea.classList.add("border-red-400");
     });
-
     dropArea.addEventListener("dragleave", () => {
       dropArea.classList.remove("border-red-400");
     });
-
     dropArea.addEventListener("drop", (e) => {
       e.preventDefault();
       dropArea.classList.remove("border-red-400");
@@ -113,14 +102,11 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("画像を選択してください。");
         return;
       }
-
       const formData = new FormData();
       selectedFiles.forEach(file => formData.append("files", file));
-
       convertBtn.disabled = true;
       convertBtn.textContent = "作成中...";
-
-      fetch("/imgpdf/convert", {
+      fetch("/img2pdf/convert", {
         method: "POST",
         body: formData
       })
@@ -148,9 +134,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // -------------------------
-  // PDF → 画像 ロジック
-  // -------------------------
   function setupPdf2ImgLogic() {
     const dropArea = document.getElementById("drop-area");
     const fileInput = document.getElementById("fileElem");
@@ -159,21 +142,17 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedFile = null;
 
     dropArea.addEventListener("click", () => fileInput.click());
-
     fileInput.addEventListener("change", (e) => {
       selectedFile = e.target.files[0];
       showFileList();
     });
-
     dropArea.addEventListener("dragover", (e) => {
       e.preventDefault();
       dropArea.classList.add("border-blue-400");
     });
-
     dropArea.addEventListener("dragleave", () => {
       dropArea.classList.remove("border-blue-400");
     });
-
     dropArea.addEventListener("drop", (e) => {
       e.preventDefault();
       dropArea.classList.remove("border-blue-400");
@@ -195,13 +174,10 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("PDFファイルを選択してください。");
         return;
       }
-
       const formData = new FormData();
       formData.append("pdf", selectedFile);
-
       convertBtn.disabled = true;
       convertBtn.textContent = "抽出中...";
-
       fetch("/pdf2img/convert", {
         method: "POST",
         body: formData
@@ -229,7 +205,4 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
   }
-
-  // 初期表示
-  renderForm();
 });
