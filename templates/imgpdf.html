@@ -8,39 +8,47 @@
   <script src="{{ url_for('static', filename='imgpdf.js') }}" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
-  <div class="w-full max-w-3xl bg-white p-8 rounded-2xl shadow-xl">
-    <h1 class="text-2xl font-bold text-center text-red-600 mb-4">PDF ⇄ 画像変換</h1>
+  <div class="w-full max-w-2xl bg-white p-8 rounded-2xl shadow-xl">
 
-    <!-- モード切り替えUI -->
-    <div class="flex items-center justify-center gap-4 mb-4">
-      <div class="text-center">
-        <div class="text-3xl">🖼️</div>
-        <div class="text-sm text-gray-600">画像</div>
+    <!-- タイトル -->
+    <h1 id="mode-title" class="text-2xl font-bold text-center text-red-600 mb-6">
+      📄 画像 → PDF
+    </h1>
+
+    <!-- 説明文 -->
+    <p class="text-center text-gray-600 mb-4">
+      画像とPDFの変換を行います。中央の矩形デザインをクリックして変換先を切り替えてください。
+    </p>
+
+    <!-- UI 切替 コントローラー -->
+    <div class="flex items-center justify-center gap-6 mb-4">
+      <div class="flex flex-col items-center">
+        <span class="text-gray-700 font-semibold">🖼 画像</span>
       </div>
 
-      <button id="toggle-btn" class="text-3xl transform transition hover:rotate-180">
+      <button id="direction-toggle" class="text-3xl transform transition hover:scale-110">
         →
       </button>
 
-      <div class="text-center">
-        <div class="text-3xl">📄</div>
-        <div class="text-sm text-gray-600">PDF</div>
+      <div class="flex flex-col items-center">
+        <span class="text-gray-700 font-semibold">📄 PDF</span>
       </div>
     </div>
 
-    <!-- 切り替えボタンも別位置に提示 -->
+    <!-- サブ切替ボタン -->
     <div class="text-center mb-6">
-      <button id="mode-text-toggle" class="text-sm text-blue-500 underline hover:text-blue-700">
-        PDF → 画像 に切り替え
+      <button id="mode-text-toggle" class="text-sm text-gray-600 underline hover:text-blue-500 transition">
+        PDF → 画像に切り替え
       </button>
     </div>
 
-    <!-- アップロード/変換フォーム -->
+    <!-- 変換フォーム領域 -->
     <div id="form-container"></div>
 
-    <!-- ダウンロード結果 -->
+    <!-- 結果表示領域 -->
     <div id="download-area" class="mt-6 text-center"></div>
 
+    <!-- 戻るリンク -->
     <div class="mt-8 text-center">
       <a href="/" class="text-blue-500 hover:underline">← モード選択に戻る</a>
     </div>
