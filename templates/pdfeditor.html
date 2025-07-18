@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Picnvert - PDFページ編集</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
+
+  <!-- エリアC: 上部のコントロールバー -->
+  <div class="bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-blue-700">🛠 PDFページ編集</h1>
+    <button id="exportButton" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+      エクスポート
+    </button>
+  </div>
+
+  <!-- エリアA: サムネイル一覧 -->
+  <div id="thumbnailArea" class="flex overflow-x-auto space-x-2 p-4 bg-gray-200">
+    <!-- JavaScriptでPDFサムネイルが挿入される -->
+  </div>
+
+  <!-- エリアB: 選択PDFの大きい表示部分 -->
+  <div id="editorArea" class="flex-1 flex items-center justify-center bg-white border-t border-gray-300">
+    <div class="text-gray-400 text-lg">ここで編集</div>
+  </div>
+
+  <!-- エクスポート用モーダル（仮） -->
+  <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+    <div class="bg-white rounded-xl p-6 w-96 shadow-lg">
+      <h2 class="text-lg font-bold mb-4">PDFを書き出し</h2>
+      <label class="block mb-2">ファイル名</label>
+      <input type="text" class="border w-full p-2 rounded mb-4" placeholder="output.pdf">
+      <div class="flex justify-end">
+        <button id="cancelExport" class="mr-2 px-4 py-2 text-gray-600 hover:underline">キャンセル</button>
+        <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">書き出す</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/pdfeditor.js"></script>
+</body>
+</html>
