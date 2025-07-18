@@ -17,7 +17,8 @@
     <!-- ドロップエリア -->
     <div id="drop-area" class="border-2 border-dashed border-gray-400 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 mb-4">
       <p class="text-gray-600">ここにファイルやフォルダをドロップ・クリックして選択</p>
-      <input type="file" id="fileElem" multiple accept="image/*" style="display:none">
+      <input type="file" id="fileElem" multiple accept="image/*" capture="environment"
+         style="width:1px;height:1px;opacity:0;position:absolute;z-index:-1;">
     </div>
 
     <!-- サブフォルダの選択 -->
