@@ -46,9 +46,6 @@ def index():
 def img2img():
     return render_template("img2img.html")
 
-# 🔸 HEIC/HEIF対応を有効にする
-register_heif_opener()
-
 @app.route("/img2img/convert", methods=["POST"])
 def img2img_convert():
     uploaded_files = request.files.getlist("files")
