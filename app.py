@@ -168,12 +168,12 @@ def pdf_to_images():
     except Exception as e:
         return f"Error processing PDF: {str(e)}", 500
 
-@app.route("/img2pdf")
-def img2pdf():
-    return render_template("img2pdf.html")
+@app.route("/imgpdf")
+def imgpdf():
+    return render_template("imgpdf.html")
 
-@app.route("/img2pdf/convert", methods=["POST"])
-def img2pdf_convert():
+@app.route("/imgpdf/convert", methods=["POST"])
+def imgpdf_convert():
     files = request.files.getlist("files")
     session_id = str(uuid.uuid4())
     output_path = os.path.join(TEMP_DIR, f"{session_id}_merged.pdf")
