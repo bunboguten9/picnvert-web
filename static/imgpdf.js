@@ -8,11 +8,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const formContainer = document.getElementById("form-container");
   const downloadArea = document.getElementById("download-area");
 
-  let mode = "img2pdf"; // デフォルトは画像 → PDF
+  let mode = "imgpdf"; // デフォルトは画像 → PDF
 
   function renderForm() {
     downloadArea.innerHTML = "";
-    if (mode === "img2pdf") {
+    if (mode === "imgpdf") {
       modeTitle.innerHTML = "🖼 → 📄";
       modeTextBtn.textContent = "PDF → 画像に切り替え";
       directionBtn.textContent = "→";
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
         </div>
       `;
-      setupImg2PdfLogic();
+      setupimgpdfLogic();
     } else {
       modeTitle.innerHTML = "📄 → 🖼";
       modeTextBtn.textContent = "画像 → PDFに切り替え";
@@ -50,18 +50,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   directionBtn.addEventListener("click", () => {
-    mode = mode === "img2pdf" ? "pdf2img" : "img2pdf";
+    mode = mode === "imgpdf" ? "pdf2img" : "imgpdf";
     renderForm();
   });
 
   modeTextBtn.addEventListener("click", () => {
-    mode = mode === "img2pdf" ? "pdf2img" : "img2pdf";
+    mode = mode === "imgpdf" ? "pdf2img" : "imgpdf";
     renderForm();
   });
 
   renderForm();
 
-  function setupImg2PdfLogic() {
+  function setupimgpdfLogic() {
     const dropArea = document.getElementById("drop-area");
     const fileInput = document.getElementById("fileElem");
     const convertBtn = document.getElementById("convert-btn");
@@ -106,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedFiles.forEach(file => formData.append("files", file));
       convertBtn.disabled = true;
       convertBtn.textContent = "作成中...";
-      fetch("/img2pdf/convert", {
+      fetch("/imgpdf/convert", {
         method: "POST",
         body: formData
       })
