@@ -94,11 +94,13 @@ dropArea.addEventListener("drop", async (e) => {
     }
 
     const format = formatSelect.value;
+    const quality = document.getElementById("quality-select").value;
     const formData = new FormData();
     selectedFiles.forEach(file => {
       formData.append("files", file);
     });
     formData.append("format", format);
+    formData.append("quality", quality);
     const quality = document.getElementById("quality-select").value;
     formData.append("quality", quality);
 
