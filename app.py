@@ -1,5 +1,5 @@
 from flask import Flask, request, send_file, render_template, abort, jsonify, make_response
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 import io
@@ -51,66 +51,76 @@ register_heif_opener()
 
 @app.route("/img2img/convert", methods=["POST"])
 def img2img_convert():
-    files = request.files.getlist("files")
-    output_format = request.form.get("format", "png").lower()
-    
-    session_id = next(tempfile._get_candidate_names())
-    session_dir = os.path.join("temp", session_id)
+    uploaded_files = request.files.getlist("files")
+    format = request.form.get("format")
+    quality_option = request.form.get("quality", "original")
+    session_id = str(uuid.uuid4())
+    session_dir = os.path.join("converted", session_id)
     os.makedirs(session_dir, exist_ok=True)
-    
-    output_paths = []
 
-    for i, file in enumerate(files):
+    converted_filenames = []
+
+    # 画質オプションに応じたサイズ・圧縮設定
+    def get_resize_and_quality(option):
+        if option == "high":
+            return {"max_size": 1920, "quality": 95, "optimize": True}
+        elif option == "medium":
+            return {"max_size": 1280, "quality": 85, "optimize": True}
+        elif option == "low":
+            return {"max_size": 960, "quality": 70, "optimize": True}
+        else:  # original
+            return {"max_size": None, "quality": None, "optimize": False}
+
+    settings = get_resize_and_quality(quality_option)
+
+    for file in uploaded_files:
         try:
-            print(f"[INFO] ファイル {i+1}: {file.filename}")
+            img = Image.open(file.stream).convert("RGBA" if format.lower() == "png" else "RGB")
+        except UnidentifiedImageError:
+            continue  # スキップ
 
-            # 画像を開く
-            image = Image.open(file.stream)
-            print(f"[INFO] 読み込み成功: {file.filename} - {image.format} - サイズ: {image.size}")
+        original_name = os.path.splitext(file.filename)[0]
+        ext = f".{format.lower()}"
+        save_path = os.path.join(session_dir, original_name + ext)
 
-            # 必要に応じて RGB に変換（HEICなども含む）
-            if image.mode not in ("RGB", "RGBA"):
-                image = image.convert("RGB")
+        # サイズ調整
+        if settings["max_size"]:
+            width, height = img.size
+            max_dim = max(width, height)
+            if max_dim > settings["max_size"]:
+                scale = settings["max_size"] / max_dim
+                img = img.resize((int(width * scale), int(height * scale)), Image.LANCZOS)
 
-            # 幅が大きすぎる画像はリサイズ（例：1280px以下に制限）
-            max_width = 1280
-            if image.width > max_width:
-                ratio = max_width / image.width
-                new_size = (int(image.width * ratio), int(image.height * ratio))
-                image = image.resize(new_size)
-                print(f"[INFO] 縮小: {file.filename} → {new_size}")
+        # 保存時のパラメータ
+        save_kwargs = {}
+        if format.lower() in ["jpeg", "jpg", "webp", "heic", "tiff", "bmp"]:
+            if settings["quality"]:
+                save_kwargs["quality"] = settings["quality"]
+            if settings["optimize"]:
+                save_kwargs["optimize"] = True
 
-            # 保存先パス作成
-            base_name = os.path.splitext(file.filename)[0]
-            output_filename = f"{base_name}_converted.{output_format}"
-            output_path = os.path.join(session_dir, output_filename)
+        img.save(save_path, format=format.upper(), **save_kwargs)
+        converted_filenames.append(os.path.basename(save_path))
 
-            # 保存（出力形式に応じて）
-            image.save(output_path, format=output_format.upper())
-            output_paths.append(output_path)
-
-        except Exception as e:
-            print(f"[ERROR] {file.filename} の変換に失敗: {e}")
-            traceback.print_exc()
-
-    # 単体画像ならそのまま返す
-    if len(output_paths) == 1:
-        response = make_response(send_file(output_paths[0], as_attachment=True))
+    # 単一ファイルの場合は直接返す
+    if len(converted_filenames) == 1:
+        path = os.path.join(session_dir, converted_filenames[0])
+        response = make_response(send_file(path, as_attachment=True))
         response.headers["X-Session-ID"] = session_id
         return response
 
-    # 複数画像なら ZIP にして返す
-    elif len(output_paths) > 1:
-        zip_path = os.path.join(session_dir, "converted_images.zip")
-        with zipfile.ZipFile(zip_path, "w") as zipf:
-            for path in output_paths:
-                zipf.write(path, os.path.basename(path))
-        response = make_response(send_file(zip_path, as_attachment=True))
-        response.headers["X-Session-ID"] = session_id
-        return response
+    # 複数ファイル → ZIPで返す
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zipf:
+        for fname in converted_filenames:
+            path = os.path.join(session_dir, fname)
+            zipf.write(path, arcname=fname)
+    zip_buffer.seek(0)
 
-    # 変換に失敗した場合
-    return jsonify({"error": "変換に失敗しました"}), 500
+    response = make_response(send_file(zip_buffer, as_attachment=True, download_name="converted_images.zip"))
+    response.headers["Content-Type"] = "application/zip"
+    response.headers["X-Session-ID"] = session_id
+    return response
 
 @app.route("/img2img/list/<session_id>")
 def img2img_list(session_id):
