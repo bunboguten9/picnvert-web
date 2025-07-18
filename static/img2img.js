@@ -229,3 +229,4 @@ function traverseEntry(entry) {
     }
   });
 }
+});
