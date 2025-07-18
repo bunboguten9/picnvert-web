@@ -32,6 +32,16 @@
     <!-- 出力形式 -->
     <div class="mb-4">
       <label for="format-select" class="block text-gray-700 mb-1">変換後の形式：</label>
+      <!-- 画質選択 -->
+      <div class="mb-4">
+        <label for="quality-select" class="block text-gray-700 mb-1">画質オプション：</label>
+        <select id="quality-select" class="w-full border border-gray-300 rounded px-2 py-1">
+          <option value="original">オリジナルのまま出力</option>
+          <option value="high">高画質（サイズ調整あり）</option>
+          <option value="medium">中画質（サイズ調整あり）</option>
+          <option value="low">軽量画質（サイズ調整あり）</option>
+        </select>
+      </div>
       <select id="format-select" class="w-full border border-gray-300 rounded px-2 py-1">
         <option value="png">PNG</option>
         <option value="jpeg">JPEG</option>
