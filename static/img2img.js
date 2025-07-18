@@ -8,13 +8,9 @@ document.addEventListener("DOMContentLoaded", function () {
   let selectedFiles = [];
 
   dropArea.addEventListener("click", () => {
-    const event = new MouseEvent("click", {
-      view: window,
-      bubbles: true,
-      cancelable: true
-    });
-    fileInput.dispatchEvent(event);
+    fileInput.click();
   });
+
 
   fileInput.addEventListener("change", (e) => {
     selectedFiles = Array.from(e.target.files);
