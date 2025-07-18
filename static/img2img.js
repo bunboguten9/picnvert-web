@@ -8,7 +8,12 @@ document.addEventListener("DOMContentLoaded", function () {
   let selectedFiles = [];
 
   dropArea.addEventListener("click", () => {
-    fileInput.click();
+    const event = new MouseEvent("click", {
+      view: window,
+      bubbles: true,
+      cancelable: true
+    });
+    fileInput.dispatchEvent(event);
   });
 
   fileInput.addEventListener("change", (e) => {
