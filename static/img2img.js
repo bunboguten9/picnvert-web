@@ -99,6 +99,8 @@ dropArea.addEventListener("drop", async (e) => {
       formData.append("files", file);
     });
     formData.append("format", format);
+    const quality = document.getElementById("quality-select").value;
+    formData.append("quality", quality);
 
     convertBtn.disabled = true;
     convertBtn.textContent = "変換中...";
