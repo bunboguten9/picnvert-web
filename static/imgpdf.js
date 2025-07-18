@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     convertBtn.disabled = true;
     convertBtn.textContent = "作成中...";
 
-    fetch("/img2pdf/convert", {
+    fetch("/imgpdf/convert", {
       method: "POST",
       body: formData
     })
