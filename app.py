@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file, render_template, abort, jsonify, make_response
+from flask import Flask, request, send_file, render_template, abort, jsonify, make_response, Response
 from PIL import Image, UnidentifiedImageError
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -10,7 +10,6 @@ import os
 import tempfile
 import uuid
 import time
-import tempfile
 import traceback
 import pillow_heif
 pillow_heif.register_heif_opener()
@@ -222,18 +221,6 @@ def imgpdf_convert():
         print(f"PDF変換エラー: {e}")
         return abort(500, "PDF作成に失敗しました。")
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/img2img')
-def img2img():
-    return render_template('img2img.html')
-
-@app.route('/imgpdf')
-def imgpdf():
-    return render_template('imgpdf.html')
-
 # ✅ PDFエディタ用ルートの追加
 @app.route('/pdfeditor')
 def pdfeditor():
@@ -241,3 +228,32 @@ def pdfeditor():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+@app.route("/robots.txt")
+def robots_txt():
+    return Response(
+        "User-agent: *\nAllow: /\nSitemap: https://picnvert-web.onrender.com/sitemap.xml",
+        mimetype="text/plain"
+    )
+
+@app.route("/sitemap.xml", methods=["GET"])
+def sitemap():
+    pages = [
+        "https://picnvert-web.onrender.com/",
+        "https://picnvert-web.onrender.com/img2img",
+        "https://picnvert-web.onrender.com/imgpdf",
+        "https://picnvert-web.onrender.com/pdfeditor",  # ← 今後追加したいなら
+    ]
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+
+    for url in pages:
+        xml.append("  <url>")
+        xml.append(f"    <loc>{url}</loc>")
+        xml.append(f"    <lastmod>{time.strftime('%Y-%m-%d')}</lastmod>")
+        xml.append("    <priority>0.8</priority>")
+        xml.append("  </url>")
+
+    xml.append("</urlset>")
+    response = Response("\n".join(xml), mimetype='application/xml')
+    return response
