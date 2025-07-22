@@ -226,9 +226,6 @@ def imgpdf_convert():
 def pdfeditor():
     return render_template('pdfeditor.html')
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
 @app.route("/robots.txt")
 def robots_txt():
     return Response(
@@ -257,3 +254,7 @@ def sitemap():
     xml.append("</urlset>")
     response = Response("\n".join(xml), mimetype='application/xml')
     return response
+
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
