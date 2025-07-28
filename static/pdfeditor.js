@@ -1,11 +1,16 @@
-// public/pdfeditor.js
-
 let selectedPageIndex = null;
-const thumbnailsContainer = document.getElementById("pdf-thumbnails");
-const pdfCanvas = document.getElementById("pdf-canvas");
+const thumbnailsContainer = document.getElementById("thumbnailArea");
+const editorArea = document.getElementById("editorArea");
+const exportModal = document.getElementById("exportModal");
+const exportButton = document.getElementById("exportButton");
+const cancelExport = document.getElementById("cancelExport");
+
+// メイン表示キャンバス（仮に作成）
+let pdfCanvas = document.createElement("canvas");
+pdfCanvas.className = "border shadow";
+editorArea.innerHTML = "";  // 初期表示削除
+editorArea.appendChild(pdfCanvas);
 const pdfCtx = pdfCanvas.getContext("2d");
-const exportModal = document.getElementById("export-modal");
-const exportForm = document.getElementById("export-form");
 
 let loadedPages = []; // { name: string, url: string, image: Image }
 
@@ -40,7 +45,7 @@ function renderThumbnail(index) {
   const img = document.createElement("img");
   img.src = page.url;
   img.alt = page.name;
-  img.className = "thumbnail-image";
+  img.className = "thumbnail-image h-24 shadow rounded";
 
   const label = document.createElement("div");
   label.textContent = page.name;
@@ -99,7 +104,7 @@ function selectPage(index) {
   pdfCtx.fillText("ここで編集", 20, 30);
 }
 
-// エクスポートモーダル開閉
+// モーダル操作
 function openExportModal() {
   exportModal.classList.remove("hidden");
 }
@@ -107,13 +112,10 @@ function closeExportModal() {
   exportModal.classList.add("hidden");
 }
 
-document.getElementById("open-export-modal").addEventListener("click", openExportModal);
-document.getElementById("close-export-modal").addEventListener("click", closeExportModal);
-document.getElementById("cancel-export").addEventListener("click", closeExportModal);
+exportButton.addEventListener("click", openExportModal);
+cancelExport.addEventListener("click", closeExportModal);
 
-// エクスポート実行（今はモック）
-exportForm.addEventListener("submit", (e) => {
-  e.preventDefault();
+exportModal.querySelector("button.bg-blue-600").addEventListener("click", () => {
   alert("エクスポート処理はまだ実装されていません。");
   closeExportModal();
 });
