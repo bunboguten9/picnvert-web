@@ -5,6 +5,8 @@
   <title>Picnvert - PDFページ編集</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PDF.js の読み込み -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
 
@@ -14,6 +16,9 @@
     <button id="exportButton" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
       エクスポート
     </button>
+  </div>
+  <div class="bg-white p-4">
+    <input type="file" id="pdfUpload" accept="application/pdf" class="block mb-2" />
   </div>
 
   <!-- エリアA: サムネイル一覧 -->
