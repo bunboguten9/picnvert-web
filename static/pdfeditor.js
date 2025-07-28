@@ -1,3 +1,5 @@
+// pdfeditor.js（高解像度サーバー変換対応版）
+
 let selectedPageIndex = null;
 const thumbnailsContainer = document.getElementById("thumbnailArea");
 const editorArea = document.getElementById("editorArea");
@@ -8,32 +10,11 @@ const cancelExport = document.getElementById("cancelExport");
 // メイン表示キャンバス（仮に作成）
 let pdfCanvas = document.createElement("canvas");
 pdfCanvas.className = "border shadow";
-editorArea.innerHTML = "";  // 初期表示削除
+editorArea.innerHTML = "";
 editorArea.appendChild(pdfCanvas);
 const pdfCtx = pdfCanvas.getContext("2d");
 
 let loadedPages = []; // { name: string, url: string, image: Image }
-
-// モックPDF（画像）を読み込む（今は画像で代用）
-function loadMockPDFs() {
-  const mockPDFs = [
-    { name: "sample1.pdf", url: "/mock/sample1.jpg" },
-    { name: "sample2.pdf", url: "/mock/sample2.jpg" },
-    { name: "sample3.pdf", url: "/mock/sample3.jpg" }
-  ];
-
-  mockPDFs.forEach((pdf, index) => {
-    const img = new Image();
-    img.src = pdf.url;
-    img.onload = () => {
-      loadedPages.push({ ...pdf, image: img });
-      renderThumbnail(index);
-      if (index === 0) {
-        selectPage(index);
-      }
-    };
-  });
-}
 
 function renderThumbnail(index) {
   const page = loadedPages[index];
@@ -55,10 +36,8 @@ function renderThumbnail(index) {
   div.appendChild(label);
   thumbnailsContainer.appendChild(div);
 
-  // クリックで選択
   div.addEventListener("click", () => selectPage(index));
 
-  // DnDイベント
   div.addEventListener("dragstart", (e) => {
     e.dataTransfer.setData("text/plain", index);
   });
@@ -96,7 +75,6 @@ function selectPage(index) {
   pdfCtx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
   pdfCtx.drawImage(img, 0, 0);
 
-  // 編集用ラベル
   pdfCtx.fillStyle = "rgba(255,255,255,0.7)";
   pdfCtx.fillRect(0, 0, 200, 50);
   pdfCtx.fillStyle = "black";
@@ -104,7 +82,6 @@ function selectPage(index) {
   pdfCtx.fillText("ここで編集", 20, 30);
 }
 
-// モーダル操作
 function openExportModal() {
   exportModal.classList.remove("hidden");
 }
@@ -118,8 +95,7 @@ cancelExport.addEventListener("click", closeExportModal);
 exportModal.querySelector("button.bg-blue-600").addEventListener("click", async () => {
   const filenameInput = document.getElementById("exportFilename");
   const filename = filenameInput.value.trim() || "output.pdf";
-
-  const imageData = loadedPages.map((page) => page.url);  // base64の画像URL一覧
+  const imageData = loadedPages.map((page) => page.url);
 
   const res = await fetch("/pdfeditor/export", {
     method: "POST",
@@ -139,7 +115,8 @@ exportModal.querySelector("button.bg-blue-600").addEventListener("click", async 
   }
 });
 
-// PDFアップロードと読み込み処理
+// サーバー側でPDF→画像変換
+
 document.getElementById("pdfUpload").addEventListener("change", async function (e) {
   const file = e.target.files[0];
   if (!file || file.type !== "application/pdf") {
@@ -147,31 +124,30 @@ document.getElementById("pdfUpload").addEventListener("change", async function (
     return;
   }
 
-  const fileReader = new FileReader();
-  fileReader.onload = async function () {
-    const typedArray = new Uint8Array(this.result);
-    const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+  const formData = new FormData();
+  formData.append("pdf", file);
 
-    loadedPages = []; // クリア
-    thumbnailsContainer.innerHTML = "";
+  const res = await fetch("/pdfeditor/preview", {
+    method: "POST",
+    body: formData
+  });
 
-    for (let i = 0; i < pdf.numPages; i++) {
-      const page = await pdf.getPage(i + 1);
-      const viewport = page.getViewport({ scale: 2.0 });
+  if (!res.ok) {
+    alert("PDF変換に失敗しました");
+    return;
+  }
 
-      const canvas = document.createElement("canvas");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+  const imageUrls = await res.json();
 
-      const img = new Image();
-      img.src = canvas.toDataURL();
-      await new Promise((resolve) => (img.onload = resolve));
+  loadedPages = [];
+  thumbnailsContainer.innerHTML = "";
 
-      loadedPages.push({ name: `page${i + 1}`, url: img.src, image: img });
-      renderThumbnail(i);
-      if (i === 0) selectPage(0);
-    }
-  };
-  fileReader.readAsArrayBuffer(file);
+  for (let i = 0; i < imageUrls.length; i++) {
+    const img = new Image();
+    img.src = imageUrls[i];
+    await new Promise((resolve) => (img.onload = resolve));
+    loadedPages.push({ name: `page${i + 1}`, url: imageUrls[i], image: img });
+    renderThumbnail(i);
+    if (i === 0) selectPage(0);
+  }
 });
