@@ -273,6 +273,32 @@ def export_pdf_from_images():
         traceback.print_exc()
         return "サーバーエラー", 500
 
+@app.route("/pdfeditor/preview", methods=["POST"])
+def pdf_preview():
+    if "pdf" not in request.files:
+        return "No PDF file uploaded", 400
+
+    pdf_file = request.files["pdf"]
+    pdf_data = pdf_file.read()
+
+    try:
+        doc = fitz.open(stream=pdf_data, filetype="pdf")
+        images = []
+
+        for i, page in enumerate(doc):
+            pix = page.get_pixmap(dpi=300)  # 高解像度
+            img_bytes = pix.tobytes("png")
+            b64 = base64.b64encode(img_bytes).decode("utf-8")
+            images.append(f"data:image/png;base64,{b64}")
+
+        return jsonify(images)
+
+    except Exception as e:
+        print("PDFプレビューエラー:", e)
+        traceback.print_exc()
+        return "PDF処理に失敗しました", 500
+
+
 @app.route("/sitemap.xml", methods=["GET"])
 def sitemap():
     pages = [
