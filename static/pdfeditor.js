@@ -120,4 +120,39 @@ exportModal.querySelector("button.bg-blue-600").addEventListener("click", () => 
   closeExportModal();
 });
 
-window.addEventListener("DOMContentLoaded", loadMockPDFs);
+// PDFアップロードと読み込み処理
+document.getElementById("pdfUpload").addEventListener("change", async function (e) {
+  const file = e.target.files[0];
+  if (!file || file.type !== "application/pdf") {
+    alert("PDFファイルを選んでください");
+    return;
+  }
+
+  const fileReader = new FileReader();
+  fileReader.onload = async function () {
+    const typedArray = new Uint8Array(this.result);
+    const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+
+    loadedPages = []; // クリア
+    thumbnailsContainer.innerHTML = "";
+
+    for (let i = 0; i < pdf.numPages; i++) {
+      const page = await pdf.getPage(i + 1);
+      const viewport = page.getViewport({ scale: 0.3 });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+
+      const img = new Image();
+      img.src = canvas.toDataURL();
+      await new Promise((resolve) => (img.onload = resolve));
+
+      loadedPages.push({ name: `page${i + 1}`, url: img.src, image: img });
+      renderThumbnail(i);
+      if (i === 0) selectPage(0);
+    }
+  };
+  fileReader.readAsArrayBuffer(file);
+});
