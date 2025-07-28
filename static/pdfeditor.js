@@ -1,28 +1,97 @@
-// pdfeditor.js（ズーム・パン対応ステップ1）
+// pdfeditor.js（高解像度サーバー変換対応 + 拡大縮小制限・背景対応）
 
 let selectedPageIndex = null;
 const thumbnailsContainer = document.getElementById("thumbnailArea");
 const editorArea = document.getElementById("editorArea");
+editorArea.style.backgroundColor = "#e5e7eb"; // tailwindのgray-200相当
 const exportModal = document.getElementById("exportModal");
 const exportButton = document.getElementById("exportButton");
 const cancelExport = document.getElementById("cancelExport");
 
-// スケーリングとパン
+// メイン表示キャンバス
+let pdfCanvas = document.createElement("canvas");
+pdfCanvas.className = "border shadow";
+editorArea.innerHTML = "";
+editorArea.appendChild(pdfCanvas);
+const pdfCtx = pdfCanvas.getContext("2d");
+
+let loadedPages = []; // { name: string, url: string, image: Image }
 let scale = 1;
 let offsetX = 0;
 let offsetY = 0;
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
+let imgNaturalWidth = 0;
+let imgNaturalHeight = 0;
 
-// メイン表示キャンバスの初期化
-let pdfCanvas = document.createElement("canvas");
-pdfCanvas.className = "border shadow bg-white";
-editorArea.innerHTML = "";
-editorArea.appendChild(pdfCanvas);
-const pdfCtx = pdfCanvas.getContext("2d");
+function drawPage() {
+  const img = loadedPages[selectedPageIndex]?.image;
+  if (!img) return;
+  imgNaturalWidth = img.width;
+  imgNaturalHeight = img.height;
 
-let loadedPages = []; // { name: string, url: string, image: Image }
+  pdfCanvas.width = editorArea.clientWidth;
+  pdfCanvas.height = editorArea.clientHeight;
+
+  pdfCtx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+
+  const drawWidth = imgNaturalWidth * scale;
+  const drawHeight = imgNaturalHeight * scale;
+
+  const dx = (pdfCanvas.width - drawWidth) / 2 + offsetX;
+  const dy = (pdfCanvas.height - drawHeight) / 2 + offsetY;
+
+  pdfCtx.drawImage(img, dx, dy, drawWidth, drawHeight);
+
+  pdfCtx.fillStyle = "rgba(255,255,255,0.7)";
+  pdfCtx.fillRect(dx, dy, 200 * scale, 50 * scale);
+  pdfCtx.fillStyle = "black";
+  pdfCtx.font = `${18 * scale}px sans-serif`;
+  pdfCtx.fillText("ここで編集", dx + 20 * scale, dy + 30 * scale);
+}
+
+function selectPage(index) {
+  selectedPageIndex = index;
+  scale = 1;
+  offsetX = 0;
+  offsetY = 0;
+  drawPage();
+}
+
+pdfCanvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const prevScale = scale;
+  const zoomFactor = 0.8; // 感度調整（0.8倍）
+  scale *= e.deltaY > 0 ? zoomFactor : 1 / zoomFactor;
+
+  const img = loadedPages[selectedPageIndex]?.image;
+  if (!img) return;
+
+  const minScaleW = editorArea.clientWidth / img.width;
+  const minScaleH = editorArea.clientHeight / img.height;
+  const minScale = Math.min(minScaleW, minScaleH);
+  if (scale < minScale) scale = minScale;
+
+  drawPage();
+});
+
+pdfCanvas.addEventListener("mousedown", (e) => {
+  isDragging = true;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+});
+
+document.addEventListener("mouseup", () => (isDragging = false));
+
+document.addEventListener("mousemove", (e) => {
+  if (!isDragging) return;
+  offsetX += e.clientX - dragStartX;
+  offsetY += e.clientY - dragStartY;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  drawPage();
+});
 
 function renderThumbnail(index) {
   const page = loadedPages[index];
@@ -45,10 +114,13 @@ function renderThumbnail(index) {
   thumbnailsContainer.appendChild(div);
 
   div.addEventListener("click", () => selectPage(index));
+
   div.addEventListener("dragstart", (e) => {
     e.dataTransfer.setData("text/plain", index);
   });
+
   div.addEventListener("dragover", (e) => e.preventDefault());
+
   div.addEventListener("drop", (e) => {
     e.preventDefault();
     const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
@@ -57,9 +129,7 @@ function renderThumbnail(index) {
       const moved = loadedPages.splice(fromIndex, 1)[0];
       loadedPages.splice(toIndex, 0, moved);
       rerenderThumbnails();
-      if (selectedPageIndex === fromIndex) {
-        selectPage(toIndex);
-      }
+      if (selectedPageIndex === fromIndex) selectPage(toIndex);
     }
   });
 }
@@ -67,38 +137,6 @@ function renderThumbnail(index) {
 function rerenderThumbnails() {
   thumbnailsContainer.innerHTML = "";
   loadedPages.forEach((_, i) => renderThumbnail(i));
-}
-
-function drawPage() {
-  if (selectedPageIndex === null) return;
-  const page = loadedPages[selectedPageIndex];
-  if (!page || !page.image) return;
-
-  const img = page.image;
-  const displayWidth = editorArea.clientWidth;
-  const scaleToFit = displayWidth / img.width;
-
-  pdfCanvas.width = img.width * scale;
-  pdfCanvas.height = img.height * scale;
-
-  pdfCtx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
-  pdfCtx.clearRect(-offsetX / scale, -offsetY / scale, pdfCanvas.width / scale, pdfCanvas.height / scale);
-  pdfCtx.drawImage(img, 0, 0);
-
-  // デモ用ラベル
-  pdfCtx.fillStyle = "rgba(255,255,255,0.7)";
-  pdfCtx.fillRect(0, 0, 200, 50);
-  pdfCtx.fillStyle = "black";
-  pdfCtx.font = "bold 18px sans-serif";
-  pdfCtx.fillText("ここで編集", 20, 30);
-}
-
-function selectPage(index) {
-  selectedPageIndex = index;
-  scale = 1;
-  offsetX = 0;
-  offsetY = 0;
-  drawPage();
 }
 
 function openExportModal() {
@@ -134,33 +172,6 @@ exportModal.querySelector("button.bg-blue-600").addEventListener("click", async 
   }
 });
 
-pdfCanvas.addEventListener("wheel", (e) => {
-  e.preventDefault();
-  const zoom = e.deltaY < 0 ? 1.1 : 0.9;
-  scale *= zoom;
-  drawPage();
-});
-
-pdfCanvas.addEventListener("mousedown", (e) => {
-  isDragging = true;
-  dragStartX = e.clientX - offsetX;
-  dragStartY = e.clientY - offsetY;
-});
-
-window.addEventListener("mousemove", (e) => {
-  if (isDragging) {
-    offsetX = e.clientX - dragStartX;
-    offsetY = e.clientY - dragStartY;
-    drawPage();
-  }
-});
-
-window.addEventListener("mouseup", () => {
-  isDragging = false;
-});
-
-// サーバー側でPDF→画像変換
-
 document.getElementById("pdfUpload").addEventListener("change", async function (e) {
   const file = e.target.files[0];
   if (!file || file.type !== "application/pdf") {
@@ -182,6 +193,7 @@ document.getElementById("pdfUpload").addEventListener("change", async function (
   }
 
   const imageUrls = await res.json();
+
   loadedPages = [];
   thumbnailsContainer.innerHTML = "";
 
