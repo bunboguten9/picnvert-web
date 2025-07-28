@@ -12,6 +12,7 @@ import uuid
 import time
 import traceback
 import pillow_heif
+import base64
 pillow_heif.register_heif_opener()
 
 
@@ -232,6 +233,45 @@ def robots_txt():
         "User-agent: *\nAllow: /\nSitemap: https://picnvert-web.onrender.com/sitemap.xml",
         mimetype="text/plain"
     )
+
+@app.route("/pdfeditor/export", methods=["POST"])
+def export_pdf_from_images():
+    try:
+        data = request.get_json()
+        images = data.get("images", [])
+        filename = data.get("filename", "output.pdf")
+
+        if not images:
+            return "No images provided", 400
+
+        pdf_buffer = io.BytesIO()
+        c = canvas.Canvas(pdf_buffer)
+
+        for img_data_url in images:
+            # base64から画像読み込み
+            header, encoded = img_data_url.split(",", 1)
+            img_bytes = io.BytesIO(base64.b64decode(encoded))
+            img = Image.open(img_bytes).convert("RGB")
+
+            width, height = img.size
+            c.setPageSize((width, height))
+            c.drawImage(ImageReader(img), 0, 0, width=width, height=height)
+            c.showPage()
+
+        c.save()
+        pdf_buffer.seek(0)
+
+        return send_file(
+            pdf_buffer,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        print("PDFエクスポートエラー:", e)
+        traceback.print_exc()
+        return "サーバーエラー", 500
 
 @app.route("/sitemap.xml", methods=["GET"])
 def sitemap():
