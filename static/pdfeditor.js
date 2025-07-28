@@ -62,7 +62,7 @@ function selectPage(index) {
 pdfCanvas.addEventListener("wheel", (e) => {
   e.preventDefault();
   const prevScale = scale;
-  const zoomFactor = 1.0; // 感度調整（1.0倍）
+  const zoomFactor = 0.7; // 感度調整（0.7倍）
   scale *= e.deltaY > 0 ? zoomFactor : 1 / zoomFactor;
 
   const img = loadedPages[selectedPageIndex]?.image;
