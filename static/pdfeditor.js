@@ -1,4 +1,4 @@
-// pdfeditor.js（高解像度サーバー変換対応版）
+// pdfeditor.js（ズーム・パン対応ステップ1）
 
 let selectedPageIndex = null;
 const thumbnailsContainer = document.getElementById("thumbnailArea");
@@ -7,9 +7,17 @@ const exportModal = document.getElementById("exportModal");
 const exportButton = document.getElementById("exportButton");
 const cancelExport = document.getElementById("cancelExport");
 
-// メイン表示キャンバス（仮に作成）
+// スケーリングとパン
+let scale = 1;
+let offsetX = 0;
+let offsetY = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+
+// メイン表示キャンバスの初期化
 let pdfCanvas = document.createElement("canvas");
-pdfCanvas.className = "border shadow";
+pdfCanvas.className = "border shadow bg-white";
 editorArea.innerHTML = "";
 editorArea.appendChild(pdfCanvas);
 const pdfCtx = pdfCanvas.getContext("2d");
@@ -37,13 +45,10 @@ function renderThumbnail(index) {
   thumbnailsContainer.appendChild(div);
 
   div.addEventListener("click", () => selectPage(index));
-
   div.addEventListener("dragstart", (e) => {
     e.dataTransfer.setData("text/plain", index);
   });
-
   div.addEventListener("dragover", (e) => e.preventDefault());
-
   div.addEventListener("drop", (e) => {
     e.preventDefault();
     const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
@@ -64,22 +69,36 @@ function rerenderThumbnails() {
   loadedPages.forEach((_, i) => renderThumbnail(i));
 }
 
-function selectPage(index) {
-  selectedPageIndex = index;
-  const page = loadedPages[index];
+function drawPage() {
+  if (selectedPageIndex === null) return;
+  const page = loadedPages[selectedPageIndex];
   if (!page || !page.image) return;
 
   const img = page.image;
-  pdfCanvas.width = img.width;
-  pdfCanvas.height = img.height;
-  pdfCtx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+  const displayWidth = editorArea.clientWidth;
+  const scaleToFit = displayWidth / img.width;
+
+  pdfCanvas.width = img.width * scale;
+  pdfCanvas.height = img.height * scale;
+
+  pdfCtx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+  pdfCtx.clearRect(-offsetX / scale, -offsetY / scale, pdfCanvas.width / scale, pdfCanvas.height / scale);
   pdfCtx.drawImage(img, 0, 0);
 
+  // デモ用ラベル
   pdfCtx.fillStyle = "rgba(255,255,255,0.7)";
   pdfCtx.fillRect(0, 0, 200, 50);
   pdfCtx.fillStyle = "black";
   pdfCtx.font = "bold 18px sans-serif";
   pdfCtx.fillText("ここで編集", 20, 30);
+}
+
+function selectPage(index) {
+  selectedPageIndex = index;
+  scale = 1;
+  offsetX = 0;
+  offsetY = 0;
+  drawPage();
 }
 
 function openExportModal() {
@@ -115,6 +134,31 @@ exportModal.querySelector("button.bg-blue-600").addEventListener("click", async 
   }
 });
 
+pdfCanvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const zoom = e.deltaY < 0 ? 1.1 : 0.9;
+  scale *= zoom;
+  drawPage();
+});
+
+pdfCanvas.addEventListener("mousedown", (e) => {
+  isDragging = true;
+  dragStartX = e.clientX - offsetX;
+  dragStartY = e.clientY - offsetY;
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (isDragging) {
+    offsetX = e.clientX - dragStartX;
+    offsetY = e.clientY - dragStartY;
+    drawPage();
+  }
+});
+
+window.addEventListener("mouseup", () => {
+  isDragging = false;
+});
+
 // サーバー側でPDF→画像変換
 
 document.getElementById("pdfUpload").addEventListener("change", async function (e) {
@@ -138,7 +182,6 @@ document.getElementById("pdfUpload").addEventListener("change", async function (
   }
 
   const imageUrls = await res.json();
-
   loadedPages = [];
   thumbnailsContainer.innerHTML = "";
 
