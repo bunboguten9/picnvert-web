@@ -157,7 +157,7 @@ document.getElementById("pdfUpload").addEventListener("change", async function (
 
     for (let i = 0; i < pdf.numPages; i++) {
       const page = await pdf.getPage(i + 1);
-      const viewport = page.getViewport({ scale: 0.3 });
+      const viewport = page.getViewport({ scale: 2.0 });
 
       const canvas = document.createElement("canvas");
       canvas.width = viewport.width;
