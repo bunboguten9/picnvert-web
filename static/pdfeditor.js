@@ -115,9 +115,28 @@ function closeExportModal() {
 exportButton.addEventListener("click", openExportModal);
 cancelExport.addEventListener("click", closeExportModal);
 
-exportModal.querySelector("button.bg-blue-600").addEventListener("click", () => {
-  alert("エクスポート処理はまだ実装されていません。");
-  closeExportModal();
+exportModal.querySelector("button.bg-blue-600").addEventListener("click", async () => {
+  const filenameInput = document.getElementById("exportFilename");
+  const filename = filenameInput.value.trim() || "output.pdf";
+
+  const imageData = loadedPages.map((page) => page.url);  // base64の画像URL一覧
+
+  const res = await fetch("/pdfeditor/export", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ images: imageData, filename })
+  });
+
+  if (res.ok) {
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    closeExportModal();
+  } else {
+    alert("PDF生成に失敗しました");
+  }
 });
 
 // PDFアップロードと読み込み処理
